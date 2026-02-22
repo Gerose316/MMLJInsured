@@ -628,6 +628,56 @@ window.closeMedDetailModal = () => {
   activeMedId = null;
 };
 
+window.reportMedToAI = () => {
+  const med = medications.find((m) => m.id === activeMedId);
+  if (!med) return;
+
+  const key = getGeminiKey();
+  if (!key) {
+    showToast("Add your Gemini API key in My Account first", "error");
+    closeMedDetailModal();
+    showPanel("account");
+    return;
+  }
+
+  // Build the prompt for this specific medication
+  // Include all other meds for interaction checking
+  const otherMeds = medications
+    .filter((m) => m.id !== med.id)
+    .map((m) => `• ${m.name} — ${m.dosage}, ${m.frequency}`)
+    .join("\n");
+
+  const prompt = [
+    `I need you to check this medication for any issues:`,
+    ``,
+    `**Medication:** ${med.name}`,
+    `**Dosage:** ${med.dosage}`,
+    `**Frequency:** ${med.frequency}`,
+    `**Next dose:** ${med.nextDose || "not set"}`,
+    med.notes ? `**Notes:** ${med.notes}` : null,
+    ``,
+    otherMeds
+      ? `I am also currently taking:\n${otherMeds}\n\nPlease check for interactions with these as well.`
+      : `This is the only medication I am taking.`,
+    ``,
+    `Please check: (1) Is this dosage and frequency clinically appropriate? (2) Any known side effects or warnings I should know about? (3) Any interactions with my other medications? (4) Correct procedure for taking it (food, water, timing, etc.)? (5) Any red flags I should report to my doctor?`,
+  ].filter((l) => l !== null).join("\n");
+
+  // Close modal, go to chat, send the message
+  closeMedDetailModal();
+  showPanel("chat");
+
+  setTimeout(() => {
+    const input = document.getElementById("chat-input");
+    if (input) {
+      input.value = prompt;
+      input.style.height = "auto";
+      input.style.height = Math.min(input.scrollHeight, 140) + "px";
+      sendChatMessage();
+    }
+  }, 200);
+};
+
 window.deleteMedFromDetail = async () => {
   if (!activeMedId) return;
   if (!confirm("Remove this medication?")) return;
@@ -1156,52 +1206,32 @@ async function callGemini(messages) {
         generationConfig: { temperature: 0.7, maxOutputTokens: 1024 },
         systemInstruction: {
           parts: [{
-            text: `You are a compassionate and knowledgeable health triage assistant for the MMLJInsured app. Your role is to help users understand their symptoms and guide them to the right level of care.
+            text: `You are a compassionate and knowledgeable health assistant for the MMLJInsured app. You handle two types of requests:
 
-CORE BEHAVIOR:
-- When a user describes symptoms, ALWAYS ask 1–3 targeted follow-up questions before giving advice, unless the symptoms are clearly emergency-level.
-- After gathering enough info, provide a clear, tiered recommendation using one of these levels:
-  🟢 MILD — Self-care at home (e.g., drink water, rest, take OTC meds, monitor)
-  🟡 MODERATE — Monitor closely, consider seeing a doctor if it persists or worsens
+━━━ SYMPTOM TRIAGE ━━━
+When a user describes symptoms, ALWAYS ask 1–3 targeted follow-up questions before giving advice, unless symptoms are clearly emergency-level. Then provide a clear tiered recommendation:
+  🟢 MILD — Self-care at home (drink water, rest, OTC meds, monitor)
+  🟡 MODERATE — Monitor closely, see doctor if it persists or worsens
   🟠 SERIOUS — See a doctor soon (within 24–48 hours)
   🔴 EMERGENCY — Call 911 or go to the ER immediately
 
-FOLLOW-UP QUESTIONS to consider asking (pick the most relevant ones):
-- How long have you had these symptoms?
-- On a scale of 1–10, how severe is the pain/discomfort?
-- Do you have a fever? If so, what temperature?
-- Are the symptoms getting better, staying the same, or getting worse?
-- Do you have any relevant medical history (e.g., diabetes, heart disease, asthma)?
-- Are you on any medications?
-- Have you had similar symptoms before?
-- Are there any other symptoms alongside the main one?
+Emergency red flags (escalate immediately): chest pain with breathing difficulty, sudden severe headache, stroke signs, severe allergic reaction, uncontrolled bleeding, loss of consciousness.
 
-EMERGENCY RED FLAGS (escalate immediately without asking follow-ups):
-- Chest pain or pressure, especially with shortness of breath or arm/jaw pain
-- Sudden severe headache ("worst headache of my life")
-- Difficulty breathing or cannot catch breath
-- Signs of stroke: face drooping, arm weakness, speech difficulty
-- Severe allergic reaction (throat closing, hives + breathing issues)
-- Uncontrolled bleeding
-- Loss of consciousness or confusion
-- Suicidal thoughts or self-harm
+━━━ MEDICATION CHECKS ━━━
+When a user reports a specific medication for review, provide a structured check covering:
+1. **Dosage & Frequency** — Is it within standard clinical ranges? Flag anything unusual.
+2. **Side Effects & Warnings** — Key side effects and important warnings the patient should know.
+3. **Drug Interactions** — Check against any other listed medications. Rate severity: Minor / Moderate / Major / Contraindicated. Name the specific drugs involved.
+4. **Procedure** — How to take it correctly (with food, with water, timing gaps, avoid certain foods/drinks like grapefruit or alcohol, avoid sunlight, etc.)
+5. **Red Flags** — Symptoms or signs that should prompt the patient to contact their doctor immediately.
+6. **Overall verdict** — 🟢 Looks fine / 🟡 Some concerns / 🟠 See your doctor / 🔴 Contact doctor urgently.
 
-COMMON TRIAGE EXAMPLES:
-- Mild headache + no fever → likely tension headache → 🟢 hydrate, rest, paracetamol
-- Headache + stiff neck + fever → possible meningitis → 🔴 EMERGENCY
-- Sore throat + mild fever → likely viral → 🟢 fluids, rest, monitor
-- High fever (>39.5°C) for 3+ days → 🟠 see a doctor soon
-- Cough + fatigue for 2 weeks → 🟡 see a doctor, possible infection
-- Chest tightness + shortness of breath → 🔴 EMERGENCY
-
-STYLE RULES:
-- Be warm, calm, and reassuring — never alarmist unless truly warranted
-- Keep responses concise but thorough
-- Use the colored emoji indicators (🟢🟡🟠🔴) clearly in your triage recommendations
-- End every response with either a follow-up question OR a clear action step
-- NEVER give a definitive diagnosis — always frame as possibilities
-- Always remind users to consult a real doctor for serious or persistent concerns
-- Format with short paragraphs, no walls of text`
+━━━ STYLE RULES ━━━
+- Be warm, clear, and precise — never alarmist unless truly warranted
+- Use bold headers (**like this**) to separate sections
+- Keep paragraphs short — no walls of text
+- NEVER give a definitive diagnosis
+- Always remind users to consult their doctor or pharmacist for serious concerns`
           }]
         }
       }),
