@@ -1730,3 +1730,36 @@ select:focus { border-color: var(--accent); }
   .theme-switcher { gap: 2px; padding: 2px; }
   .theme-btn { width: 26px; height: 26px; font-size: 12px; }
 }
+
+/* ── Med detail: Report to AI button ────────── */
+.med-action-btns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.btn-report-ai {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  padding: 16px;
+  background: linear-gradient(135deg, rgba(99,102,241,0.12), rgba(139,92,246,0.08));
+  border: 1px solid rgba(99,102,241,0.35);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-report-ai:hover {
+  background: linear-gradient(135deg, rgba(99,102,241,0.22), rgba(139,92,246,0.16));
+  border-color: #818cf8;
+  transform: translateY(-1px);
+}
+.btn-report-ai .bac-icon { font-size: 22px; }
+.btn-report-ai .bac-label {
+  font-family: 'Syne', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  color: #818cf8;
+}
