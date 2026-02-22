@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CareAssist — Intelligent Health Companion</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@300;400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════
+     AUTH SCREEN
+════════════════════════════════════════════ -->
+<div id="auth-screen">
+  <div class="auth-wrap">
+    <div class="auth-hero">
+      <div>
+        <div class="hero-logo">
+          <div class="logo-mark">🩺</div>
+          <span class="logo-name">CareAssist</span>
+        </div>
+        <div class="hero-tagline">
+          AI-powered<br><em>health guidance</em><br>at your fingertips
+        </div>
+        <ul class="hero-features">
+          <li>Gemini AI symptom analysis</li>
+          <li>Emergency escalation alerts</li>
+          <li>Medication dose tracking</li>
+          <li>Personal health history</li>
+          <li>AI health chat assistant</li>
+        </ul>
+      </div>
+      <div class="hero-badge">
+        <span>⚡</span> Powered by Gemini AI
+      </div>
+    </div>
+
+    <div class="auth-form-panel">
+      <div class="auth-tabs">
+        <button class="auth-tab active" onclick="switchTab('login')">Sign in</button>
+        <button class="auth-tab" onclick="switchTab('signup')">Register</button>
+      </div>
+
+      <div id="login-form">
+        <label class="form-label">Email address</label>
+        <input class="form-input" type="email" id="li-email" placeholder="you@example.com">
+        <label class="form-label">Password</label>
+        <input class="form-input" type="password" id="li-pw" placeholder="••••••••">
+        <button class="btn-primary" onclick="doLogin()">Sign In</button>
+      </div>
+
+      <div id="signup-form" style="display:none">
+        <label class="form-label">Full name</label>
+        <input class="form-input" type="text" id="su-name" placeholder="Jane Smith">
+        <label class="form-label">Email address</label>
+        <input class="form-input" type="email" id="su-email" placeholder="you@example.com">
+        <label class="form-label">Password (min. 6 chars)</label>
+        <input class="form-input" type="password" id="su-pw" placeholder="••••••••">
+        <button class="btn-primary" onclick="doSignup()">Create Account</button>
+      </div>
+
+      <div class="auth-error" id="auth-err"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     API KEY SETUP SCREEN
+════════════════════════════════════════════ -->
+<div id="apikey-screen" style="display:none">
+  <div class="auth-wrap">
+    <div class="auth-hero">
+      <div>
+        <div class="hero-logo">
+          <div class="logo-mark">🩺</div>
+          <span class="logo-name">CareAssist</span>
+        </div>
+        <div class="hero-tagline">
+          One last<br><em>quick step</em><br>to get started
+        </div>
+        <ul class="hero-features">
+          <li>Your key is saved in this browser</li>
+          <li>Never asked again on this device</li>
+          <li>Free key from Google AI Studio</li>
+          <li>Takes less than 60 seconds</li>
+        </ul>
+      </div>
+      <div class="hero-badge">
+        <span>🔑</span> One-time setup
+      </div>
+    </div>
+
+    <div class="auth-form-panel">
+      <div class="apikey-setup-header">
+        <div class="apikey-icon">⚡</div>
+        <h2>Connect Gemini AI</h2>
+        <p>Enter your Gemini API key to power the symptom analysis and health chat.</p>
+      </div>
+
+      <div class="apikey-steps">
+        <div class="apikey-step">
+          <span class="step-num">1</span>
+          <span>Go to <a href="https://aistudio.google.com/app/apikey" target="_blank">aistudio.google.com/app/apikey</a></span>
+        </div>
+        <div class="apikey-step">
+          <span class="step-num">2</span>
+          <span>Click <strong>"Create API key"</strong></span>
+        </div>
+        <div class="apikey-step">
+          <span class="step-num">3</span>
+          <span>Copy the key and paste it below</span>
+        </div>
+      </div>
+
+      <label class="form-label">Your Gemini API Key</label>
+      <input class="form-input" type="password" id="setup-api-key" placeholder="AIza...">
+      <div class="apikey-show-row">
+        <input type="checkbox" id="show-key-toggle" onchange="toggleKeyVisibility()">
+        <label for="show-key-toggle">Show key</label>
+      </div>
+      <button class="btn-primary" onclick="saveSetupApiKey()">Save & Continue →</button>
+      <div class="auth-error" id="apikey-err"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     MAIN APP
+════════════════════════════════════════════ -->
+<div id="app-screen">
+
+  <!-- Header -->
+  <header class="app-header">
+    <div class="header-logo">
+      <div class="lm">🩺</div>
+      CareAssist
+    </div>
+    <div class="header-divider"></div>
+    <div class="status-dot"></div>
+    <span class="status-text">SYSTEM ONLINE</span>
+    <div class="header-right">
+      <div class="user-chip">
+        <div class="user-avatar" id="user-av">?</div>
+        <span class="user-name" id="user-nm">User</span>
+      </div>
+      <button class="btn-apikey" onclick="showChangeKeyModal()">🔑 API Key</button>
+      <button class="btn-logout" onclick="doLogout()">Sign out</button>
+    </div>
+  </header>
+
+  <!-- Nav -->
+  <nav class="app-nav">
+    <button class="nav-btn active" id="nav-symptoms" onclick="showPanel('symptoms')">
+      <span class="nav-icon">🔬</span> Symptom Check
+    </button>
+    <button class="nav-btn" id="nav-chat" onclick="showPanel('chat')">
+      <span class="nav-icon">💬</span> AI Chat
+    </button>
+    <button class="nav-btn" id="nav-medications" onclick="showPanel('medications')">
+      <span class="nav-icon">💊</span> Medications
+    </button>
+    <button class="nav-btn" id="nav-history" onclick="showPanel('history')">
+      <span class="nav-icon">📋</span> History
+    </button>
+  </nav>
+
+  <div class="app-content">
+
+    <!-- ── SYMPTOM PANEL ── -->
+    <div class="panel active" id="panel-symptoms">
+
+      <!-- API KEY BANNER (hidden by default — key is baked in) -->
+      <div class="api-banner" id="api-banner" style="display:none">
+        <span class="ab-icon">⚠️</span>
+        <span class="ab-text">Enter your <strong>Gemini API key</strong> to enable AI analysis</span>
+        <input type="password" id="api-key-input" placeholder="AIza...">
+        <button onclick="saveApiKey()">Save Key</button>
+      </div>
+
+      <div class="section-header">
+        <h2>Symptom Analysis</h2>
+        <p>Describe what you're experiencing and our Gemini AI will assess your condition</p>
+      </div>
+
+      <div class="card">
+        <div class="card-label">Describe your symptoms</div>
+        <textarea id="symptom-text" placeholder="e.g. I've had a throbbing headache for 2 days, along with a fever of 38.5°C and neck stiffness..."></textarea>
+
+        <div class="tags-wrap" id="quick-tags">
+          <span class="stag" onclick="toggleTag(this,'Headache')">Headache</span>
+          <span class="stag" onclick="toggleTag(this,'Fever')">Fever</span>
+          <span class="stag" onclick="toggleTag(this,'Cough')">Cough</span>
+          <span class="stag" onclick="toggleTag(this,'Fatigue')">Fatigue</span>
+          <span class="stag" onclick="toggleTag(this,'Nausea / Vomiting')">Nausea</span>
+          <span class="stag" onclick="toggleTag(this,'Chest pain')">Chest pain</span>
+          <span class="stag" onclick="toggleTag(this,'Shortness of breath')">Shortness of breath</span>
+          <span class="stag" onclick="toggleTag(this,'Dizziness')">Dizziness</span>
+          <span class="stag" onclick="toggleTag(this,'Sore throat')">Sore throat</span>
+          <span class="stag" onclick="toggleTag(this,'Stomach pain')">Stomach pain</span>
+          <span class="stag" onclick="toggleTag(this,'Rash')">Rash</span>
+          <span class="stag" onclick="toggleTag(this,'Joint pain')">Joint pain</span>
+        </div>
+
+        <div class="meta-row">
+          <div class="meta-field">
+            <label>Duration</label>
+            <select id="sym-duration">
+              <option>Just started (&lt; 1 hour)</option>
+              <option>A few hours</option>
+              <option>1–2 days</option>
+              <option>3–7 days</option>
+              <option>Over a week</option>
+              <option>Chronic / ongoing</option>
+            </select>
+          </div>
+          <div class="meta-field">
+            <label>Pain severity (1–10)</label>
+            <select id="sym-severity">
+              <option value="1">1 — Barely noticeable</option>
+              <option value="2">2</option>
+              <option value="3">3 — Mild</option>
+              <option value="4">4</option>
+              <option value="5" selected>5 — Moderate</option>
+              <option value="6">6</option>
+              <option value="7">7 — Severe</option>
+              <option value="8">8</option>
+              <option value="9">9 — Very severe</option>
+              <option value="10">10 — Worst possible</option>
+            </select>
+          </div>
+        </div>
+
+        <button class="analyze-btn" onclick="analyzeSymptoms()" id="analyze-btn">
+          ✦ Analyze with Gemini AI
+        </button>
+      </div>
+
+      <!-- AI LOADING -->
+      <div class="ai-loading" id="ai-loading">
+        <div class="loader">
+          <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+        </div>
+        <p>Gemini AI is analyzing your symptoms...</p>
+      </div>
+
+      <!-- RESULT CARD -->
+      <div class="result-card" id="result-card">
+        <div class="emergency-bar" id="em-bar">
+          <div class="em-text">
+            <div class="em-title">🚨 Seek Emergency Care Now</div>
+            <div class="em-sub">Your symptoms may indicate a life-threatening condition</div>
+          </div>
+          <button class="call-btn" onclick="callEmergency()">📞 Call 911</button>
+        </div>
+
+        <div class="severity-bar sev-low" id="sev-bar">
+          <span class="sev-icon" id="sev-icon">✅</span>
+          <span class="sev-label" id="sev-label">Mild Symptoms</span>
+          <span class="sev-badge" id="sev-badge">LOW</span>
+        </div>
+
+        <div class="result-body">
+          <div class="res-section">
+            <h4>AI Analysis</h4>
+            <p id="res-analysis"></p>
+          </div>
+          <div class="res-section">
+            <h4>Self-Care Recommendations</h4>
+            <p id="res-recs"></p>
+          </div>
+          <div class="res-section">
+            <h4>Suggested OTC Medications</h4>
+            <div class="med-chips" id="res-meds"></div>
+          </div>
+          <div class="res-section">
+            <h4>Should I See a Doctor?</h4>
+            <p id="res-doctor"></p>
+          </div>
+        </div>
+      </div>
+
+      <div class="disclaimer">
+        ⚠️ <strong>Medical Disclaimer:</strong> CareAssist provides general information only and is not a substitute for professional medical advice, diagnosis, or treatment. Always consult a qualified healthcare provider for medical concerns.
+      </div>
+    </div>
+
+    <!-- ── AI CHAT PANEL ── -->
+    <div class="panel" id="panel-chat">
+      <div class="section-header">
+        <h2>AI Health Chat</h2>
+        <p>Ask our Gemini-powered assistant about your health questions</p>
+      </div>
+      <div class="chat-wrap">
+        <div class="chat-messages" id="chat-messages"></div>
+        <div class="chat-input-bar">
+          <textarea
+            id="chat-input"
+            placeholder="Ask about your symptoms, medications, or general health…"
+            rows="1"
+            onkeydown="chatKeydown(event)"
+            oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'">
+          </textarea>
+          <button class="chat-send-btn" id="chat-send-btn" onclick="sendChatMessage()">➤</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── MEDICATIONS PANEL ── -->
+    <div class="panel" id="panel-medications">
+      <div class="meds-top">
+        <div class="section-header" style="margin:0">
+          <h2>My Medications</h2>
+          <p>Track doses and stay on schedule</p>
+        </div>
+        <button class="btn-add" onclick="openMedModal()">+ Add Medication</button>
+      </div>
+      <div class="meds-grid" id="meds-list"></div>
+    </div>
+
+    <!-- ── HISTORY PANEL ── -->
+    <div class="panel" id="panel-history">
+      <div class="section-header">
+        <h2>Symptom History</h2>
+        <p>Your past symptom assessments, stored securely in your account</p>
+      </div>
+      <div class="history-grid" id="history-list"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── ADD MED MODAL ── -->
+<div class="modal-overlay" id="med-modal">
+  <div class="modal">
+    <h3>Add Medication</h3>
+    <label class="form-label">Medication name</label>
+    <input class="form-input" type="text" id="m-name" placeholder="e.g. Paracetamol 500mg">
+    <label class="form-label">Dosage</label>
+    <input class="form-input" type="text" id="m-dose" placeholder="e.g. 1 tablet">
+    <label class="form-label">Frequency</label>
+    <select class="form-input" id="m-freq" style="margin-bottom:14px">
+      <option>Once daily</option>
+      <option>Twice daily</option>
+      <option>Three times daily</option>
+      <option>Every 4 hours</option>
+      <option>Every 6 hours</option>
+      <option>Every 8 hours</option>
+      <option>As needed (PRN)</option>
+    </select>
+    <label class="form-label">Next dose time</label>
+    <input class="form-input" type="time" id="m-time">
+    <label class="form-label">Notes (optional)</label>
+    <input class="form-input" type="text" id="m-notes" placeholder="e.g. Take with food, avoid alcohol">
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeMedModal()">Cancel</button>
+      <button class="btn-save" onclick="saveMed()">Save Medication</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── MED DETAIL MODAL ── -->
+<div class="modal-overlay" id="med-detail-modal">
+  <div class="modal">
+    <div class="med-detail-header">
+      <div class="med-detail-icon">💊</div>
+      <div>
+        <div class="med-detail-title" id="mdm-name">Medication</div>
+        <div class="med-detail-sub" id="mdm-sub">Dosage · Frequency</div>
+      </div>
+    </div>
+    <div class="med-detail-info">
+      <div class="med-info-row">
+        <span class="mir-label">Dosage</span>
+        <span class="mir-val" id="mdm-dosage">—</span>
+      </div>
+      <div class="med-detail-divider"></div>
+      <div class="med-info-row">
+        <span class="mir-label">Frequency</span>
+        <span class="mir-val" id="mdm-frequency">—</span>
+      </div>
+      <div class="med-detail-divider"></div>
+      <div class="med-info-row">
+        <span class="mir-label">Next Dose</span>
+        <span class="mir-val" id="mdm-nextdose">—</span>
+      </div>
+      <div class="med-detail-divider" id="mdm-notes-divider"></div>
+      <div class="med-info-row" id="mdm-notes-row">
+        <span class="mir-label">Notes</span>
+        <span class="mir-val" id="mdm-notes">—</span>
+      </div>
+    </div>
+    <div class="med-action-btns">
+      <button class="btn-ai-check" onclick="runMedSymptomCheck()">
+        <span class="bac-icon">🔬</span>
+        <span class="bac-label">AI Symptom<br>Check</span>
+      </button>
+      <button class="btn-del-full" onclick="deleteMedFromDetail()">
+        <span class="bac-icon">🗑️</span>
+        <span class="bac-label">Remove<br>Medication</span>
+      </button>
+    </div>
+    <button class="btn-cancel" style="width:100%" onclick="closeMedDetailModal()">Close</button>
+  </div>
+</div>
+
+<!-- ── CHANGE API KEY MODAL ── -->
+<div class="modal-overlay" id="change-key-modal">
+  <div class="modal">
+    <h3>🔑 Update Gemini API Key</h3>
+    <p style="font-size:13px;color:var(--text-dim);margin-bottom:16px">Your key is stored in this browser and will persist across sessions. Get a key at <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:var(--accent)">aistudio.google.com</a></p>
+    <label class="form-label">New API Key</label>
+    <input class="form-input" type="password" id="change-key-input" placeholder="AIza...">
+    <div class="apikey-show-row">
+      <input type="checkbox" id="show-change-key-toggle" onchange="document.getElementById('change-key-input').type = this.checked ? 'text' : 'password'">
+      <label for="show-change-key-toggle">Show key</label>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeChangeKeyModal()">Cancel</button>
+      <button class="btn-save" onclick="saveChangedKey()">Save Key</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- ── Load app as ES module ── -->
+<script type="module" src="app.js"></script>
+
+</body>
+</html>
